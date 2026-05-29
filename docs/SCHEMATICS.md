@@ -73,8 +73,45 @@ If the RP2350 accidentally sets its pins to output 5V/3.3V while the Saturn is s
 While the RP2350 GPIOs are 5V-tolerant *when powered*, they can be damaged if a 5V signal arrives while the board is unpowered. Furthermore, driving a 3.3V signal into a 5V system (the Saturn) usually works, but isn't strictly to 5V TTL spec.
 * **Solution**: Use a bi-directional logic level shifter (like the `TXS0108E` module). Connect the 3.3V side to the RP2350 and the 5V side to the Sega Saturn. This perfectly translates the voltages and adds an extra layer of electrical buffering.
 
+### 4. Power Surge / ESD Clamping (Strongly Recommended)
+Hot-plugging cables, ESD events, or noisy power rails can inject short voltage spikes into the Saturn controller port.
+* **Solution**: Add a **5V TVS diode** between `+5V` and `GND` on the adapter board, physically close to the Saturn cable entry.
+    * Suggested part class: unidirectional 5V TVS (for example SMBJ5.0A-class).
+    * TVS cathode to `+5V`, anode to `GND`.
+    * This clamps fast spikes before they propagate into the Saturn or RP2350.
+
+### 5. Overcurrent Limiting on Saturn 5V (Strongly Recommended)
+If a wiring mistake or downstream fault occurs, the console's 5V rail can be overloaded.
+* **Solution**: Add a **resettable polyfuse** in series with Saturn Pin 1 (`+5V`) before the Schottky diode.
+    * Typical starting point: hold current around `250mA` to `500mA` (choose for your board/peripherals).
+    * This limits sustained fault current and helps protect the Saturn power rail.
+
+## Bill of Materials (BOM)
+
+The table below includes a practical parts list for the protection-focused wiring shown in this document.
+
+| Qty | Reference | Part | Suggested Specification | Required |
+| :-- | :-- | :-- | :-- | :-- |
+| 1 | U1 | Waveshare RP2350-USB-A board | RP2350-USB-A | Yes |
+| 1 | J1 | Sega Saturn controller cable/plug | 9-pin Saturn controller lead | Yes |
+| 1 | D_PWR | Schottky diode | 1N5817 or 1N5819, series on +5V | Yes |
+| 1 | F1 | Resettable polyfuse (PTC) | Hold current 250mA to 500mA | Strongly Recommended |
+| 1 | TVS1 | TVS diode, unidirectional | 5V TVS, SMBJ5.0A-class | Strongly Recommended |
+| 1 | C_BULK | Bulk decoupling capacitor | 10uF, >=10V, low-ESR preferred | Recommended |
+| 1 | C_HF | High-frequency bypass capacitor | 100nF ceramic, >=10V, X7R | Recommended |
+| 2 | R_S0,R_S1 | Series resistors on S0/S1 | 100R to 330R, 1/8W or 1/4W | Recommended |
+| 4 | R_D0-R_D3 | Series resistors on D0-D3 | 100R to 330R, 1/8W or 1/4W | Recommended |
+| 1 | U2 | Bi-directional level shifter module | TXS0108E or equivalent | Optional |
+
+> [!TIP]
+> If you want a minimal but safer build, keep at least `D_PWR`, `F1`, `TVS1`, and all six series resistors.
+
 
 ## Pinout Mapping
+
+Pinout data sources:
+- Sega Saturn controller pinout: https://gamesx.com/controldata/saturn.htm
+- Waveshare RP2350-USB-A pin reference: https://www.waveshare.com/wiki/RP2350-USB-A?srsltid=AfmBOord3EtosYRN9eA4ZmPHfdGHGz5l1G7hL_v2CVy890FmMrs2h8b_
 
 | Sega Saturn Pin | Function | Direction | RP2350-USB-A Pin | Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -109,6 +146,19 @@ graph LR
         P9[Pin 9: GND]
     end
 
+    subgraph Protection Stage
+        F1[Polyfuse F1]
+        D1[Schottky D1]
+        TVS1[TVS Diode 5V]
+        C1[10uF + 100nF Decoupling]
+        RS0[100R to 330R]
+        RS1[100R to 330R]
+        RD0[100R to 330R]
+        RD1[100R to 330R]
+        RD2[100R to 330R]
+        RD3[100R to 330R]
+    end
+
     subgraph RP2350-USB-A
         VBUS[VBUS / 5V In]
         GND_RP[GND]
@@ -120,16 +170,23 @@ graph LR
         GP5[GP5]
     end
 
-    P1 --- VBUS
+    P1 --> F1 --> D1 --> VBUS
+    VBUS --- TVS1
+    TVS1 --- GND_RP
+    VBUS --- C1
+    C1 --- GND_RP
     P9 --- GND_RP
     
-    P5 -.->|Input to RP2350| GP0
-    P4 -.->|Input to RP2350| GP1
+    P5 -.-> RS0 -.->|Input to RP2350| GP0
+    P4 -.-> RS1 -.->|Input to RP2350| GP1
     
-    GP2 ===|Output to Saturn| P3
-    GP3 ===|Output to Saturn| P2
-    GP4 ===|Output to Saturn| P8
-    GP5 ===|Output to Saturn| P7
+    GP2 === RD0 ===|Output to Saturn| P3
+    GP3 === RD1 ===|Output to Saturn| P2
+    GP4 === RD2 ===|Output to Saturn| P8
+    GP5 === RD3 ===|Output to Saturn| P7
     
     P6 --- P1
 ```
+
+> [!NOTE]
+> The diagram above is a protection-focused wiring schematic. For the minimum wiring that still works, you can omit TVS/polyfuse/series resistors, but that increases risk to the Saturn in fault or ESD conditions.

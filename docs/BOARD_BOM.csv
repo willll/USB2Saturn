@@ -1,0 +1,13 @@
+Qty,Reference,Part,Value/Spec,Footprint,Populate
+1,U1,Waveshare RP2350-USB-A module,RP2350-USB-A,Custom castellated,Yes
+1,J1,Saturn cable connector,1x9 wiring interface,TH pads/header,Yes
+1,F1,Resettable fuse,PTC hold 0.25A to 0.50A,1206,Yes
+1,D1,Schottky diode,1N5819 class,SMA,Yes
+1,TVS1,TVS diode unidirectional,5V SMBJ5.0A class,SMB,Yes
+1,C1,Bulk capacitor,10uF >=10V,1206,Yes
+1,C2,Bypass capacitor,100nF >=10V X7R,0603,Yes
+2,RS0 RS1,Series resistor for S-lines,100R to 330R,0603,Yes
+4,RD0 RD1 RD2 RD3,Series resistor for D-lines,100R to 330R,0603,Yes
+1,U2,Level shifter (optional),TXS0108E class,Module or IC footprint,Optional
+1,SJ_DET,Solder jumper detect tie,3-pad solder jumper,SMT jumper,Optional
+8,SJ_SIG,Solder jumpers for direct/shift select,3-pad solder jumper,SMT jumper,Optional

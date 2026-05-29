@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "USB2Saturn_Local")(type "KiCad")(uri "${KIPRJMOD}/USB2Saturn_Local.kicad_sym")(options "")(descr "Local project symbols"))
+)

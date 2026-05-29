@@ -1,0 +1,25 @@
+Net,From,To,Notes
+SAT_VCC_IN,J1-1,F1-1,Saturn 5V input
+VCC_FUSED,F1-2,D1-A,After polyfuse
+VBUS_PROT,D1-K,U1-5V,Protected board 5V
+VBUS_PROT,TVS1-K,TVS clamp cathode
+GND,TVS1-A,U1-GND,TVS anode to ground
+VBUS_PROT,C1-1,C1 bulk positive
+GND,C1-2,C1 bulk negative
+VBUS_PROT,C2-1,C2 bypass positive
+GND,C2-2,C2 bypass negative
+GND,J1-9,U1-GND,Main return
+SAT_S0,J1-5,RS0-1,Saturn select 0 input
+RP_S0,RS0-2,U1-GP0,Routed to firmware S0
+SAT_S1,J1-4,RS1-1,Saturn select 1 input
+RP_S1,RS1-2,U1-GP1,Routed to firmware S1
+RP_D0,U1-GP2,RD0-1,Saturn data bit 0 output
+SAT_D0,RD0-2,J1-3,To Saturn D0
+RP_D1,U1-GP3,RD1-1,Saturn data bit 1 output
+SAT_D1,RD1-2,J1-2,To Saturn D1
+RP_D2,U1-GP4,RD2-1,Saturn data bit 2 output
+SAT_D2,RD2-2,J1-8,To Saturn D2
+RP_D3,U1-GP5,RD3-1,Saturn data bit 3 output
+SAT_D3,RD3-2,J1-7,To Saturn D3
+SAT_DETECT,J1-6,SJ_DET-1,Optional detect tie
+SAT_VCC_IN,SJ_DET-2,J1-1,Optional tie to +5V

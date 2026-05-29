@@ -1,0 +1,34 @@
+(kicad_sch
+  (version 20231120)
+  (generator "eeschema")
+  (uuid "4f0a45dc-46df-4eb9-9fc9-cb95e25f786f")
+  (paper "A4")
+
+  (lib_symbols)
+
+  (text "USB2Saturn Protection Board" (at 40.64 20.32 0)
+    (effects (font (size 2 2) (thickness 0.3)))
+  )
+
+  (text "Place symbols per docs/BOARD_BOM.csv" (at 40.64 27.94 0)
+    (effects (font (size 1.27 1.27) (thickness 0.2)))
+  )
+
+  (text "Apply nets from docs/BOARD_NETLIST.csv" (at 40.64 33.02 0)
+    (effects (font (size 1.27 1.27) (thickness 0.2)))
+  )
+
+  (text "Key nets: SAT_VCC_IN, VCC_FUSED, VBUS_PROT, GND" (at 40.64 43.18 0)
+    (effects (font (size 1.27 1.27) (thickness 0.2)))
+  )
+
+  (text "Signals: SAT_S0/SAT_S1, RP_S0/RP_S1, RP_D0..RP_D3, SAT_D0..SAT_D3" (at 40.64 48.26 0)
+    (effects (font (size 1.27 1.27) (thickness 0.2)))
+  )
+
+  (sheet_instances
+    (path "/"
+      (page "1")
+    )
+  )
+)
