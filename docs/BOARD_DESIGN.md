@@ -23,7 +23,7 @@ flowchart LR
     J1 --> SIG[Signal Protection]
 
     subgraph Power Protection
-      F1[Polyfuse]
+      F1[Inline AGC Fuse]
       D1[Schottky]
       TVS1[5V TVS]
       C1[10uF]
@@ -78,7 +78,7 @@ Optional level-shifter mode (populate U2 + jumpers):
 
 - U1 (RP2350-USB-A): Castellated module footprint matching Waveshare mechanical drawing.
 - J1: 1x9 2.54 mm through-hole header or solder pads for cut controller cable.
-- F1: 1206 resettable fuse.
+- F1: inline AGC/glass fuse holder footprint or wire-in inline fuse provision.
 - D1: SMA package Schottky diode.
 - TVS1: SMB package TVS diode.
 - C1: 1206 ceramic/electrolytic (10uF).
@@ -96,6 +96,7 @@ Placement order:
 1. Place U1 at board center with USB-A connector edge overhanging board edge if desired.
 2. Place J1 at cable-entry edge with strain relief holes nearby.
 3. Place F1 and D1 directly between J1 pin 1 and U1 5V.
+  For a fast prototype, a short wire-in inline holder is acceptable instead of an onboard SMD fuse footprint.
 4. Place TVS1, C1, C2 within 5-8 mm of J1 power entry.
 5. Place RS0/RS1 close to U1 GP0/GP1 pins.
 6. Place RD0-RD3 close to J1 data output side.
@@ -110,7 +111,7 @@ Placement order:
   - SAT_VCC_IN and VBUS_PROT: >= 24 mil.
   - Signal traces: 8-10 mil is sufficient.
 - Keep TVS return via to GND plane very short (target < 3 mm).
-- Keep Schottky and polyfuse in straight series path from J1 pin 1.
+- Keep Schottky and inline fuse in straight series path from J1 pin 1.
 - Maintain at least 10 mil clearance around Saturn-facing pins.
 
 ## 7. ERC/DRC And Bring-Up Checklist

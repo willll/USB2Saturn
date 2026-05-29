@@ -82,8 +82,9 @@ Hot-plugging cables, ESD events, or noisy power rails can inject short voltage s
 
 ### 5. Overcurrent Limiting on Saturn 5V (Strongly Recommended)
 If a wiring mistake or downstream fault occurs, the console's 5V rail can be overloaded.
-* **Solution**: Add a **resettable polyfuse** in series with Saturn Pin 1 (`+5V`) before the Schottky diode.
-    * Typical starting point: hold current around `250mA` to `500mA` (choose for your board/peripherals).
+* **Solution**: Add an **inline AGC/glass fuse** in series with Saturn Pin 1 (`+5V`) before the Schottky diode.
+    * Typical starting point: `250mA` to `500mA` sacrificial fuse for a prototype build.
+    * A small inline holder is easier to source locally than a low-current SMD resettable fuse.
     * This limits sustained fault current and helps protect the Saturn power rail.
 
 ## Bill of Materials (BOM)
@@ -95,7 +96,7 @@ The table below includes a practical parts list for the protection-focused wirin
 | 1 | U1 | Waveshare RP2350-USB-A board | RP2350-USB-A | Yes |
 | 1 | J1 | Sega Saturn controller cable/plug | 9-pin Saturn controller lead | Yes |
 | 1 | D_PWR | Schottky diode | 1N5817 or 1N5819, series on +5V | Yes |
-| 1 | F1 | Resettable polyfuse (PTC) | Hold current 250mA to 500mA | Strongly Recommended |
+| 1 | F1 | Inline AGC/glass fuse + holder | 250mA to 500mA sacrificial fuse | Strongly Recommended |
 | 1 | TVS1 | TVS diode, unidirectional | 5V TVS, SMBJ5.0A-class | Strongly Recommended |
 | 1 | C_BULK | Bulk decoupling capacitor | 10uF, >=10V, low-ESR preferred | Recommended |
 | 1 | C_HF | High-frequency bypass capacitor | 100nF ceramic, >=10V, X7R | Recommended |
@@ -133,60 +134,106 @@ Pinout data sources:
 ## Wiring Diagram
 
 ```mermaid
-graph LR
-    subgraph Sega Saturn Controller Plug
-        P1[Pin 1: +5V VCC]
-        P2[Pin 2: D1]
-        P3[Pin 3: D0]
-        P4[Pin 4: S1 / TR]
-        P5[Pin 5: S0 / TH]
-        P6[Pin 6: Detect / +5V]
-        P7[Pin 7: D3]
-        P8[Pin 8: D2]
-        P9[Pin 9: GND]
+flowchart LR
+    subgraph SAT["Saturn Controller Port J1"]
+        J1_1["J1-1 SAT_VCC_IN +5V"]
+        J1_2["J1-2 SAT_D1"]
+        J1_3["J1-3 SAT_D0"]
+        J1_4["J1-4 SAT_S1 TR"]
+        J1_5["J1-5 SAT_S0 TH"]
+        J1_6["J1-6 SAT_DETECT optional"]
+        J1_7["J1-7 SAT_D3"]
+        J1_8["J1-8 SAT_D2"]
+        J1_9["J1-9 GND"]
     end
 
-    subgraph Protection Stage
-        F1[Polyfuse F1]
-        D1[Schottky D1]
-        TVS1[TVS Diode 5V]
-        C1[10uF + 100nF Decoupling]
-        RS0[100R to 330R]
-        RS1[100R to 330R]
-        RD0[100R to 330R]
-        RD1[100R to 330R]
-        RD2[100R to 330R]
-        RD3[100R to 330R]
+    subgraph PWR["Power Protection"]
+        F1["F1 Inline AGC fuse 250-500mA"]
+        D_PWR["D_PWR Schottky 1N5819 class"]
+        VBUS_PROT(("VBUS_PROT"))
+        TVS1["TVS1 5V TVS SMBJ5.0A class"]
+        C_BULK["C_BULK 10uF"]
+        C_HF["C_HF 100nF"]
     end
 
-    subgraph RP2350-USB-A
-        VBUS[VBUS / 5V In]
-        GND_RP[GND]
-        GP0[GP0]
-        GP1[GP1]
-        GP2[GP2]
-        GP3[GP3]
-        GP4[GP4]
-        GP5[GP5]
+    subgraph SIG["Signal Conditioning"]
+        RS0["RS0 100-330R"]
+        RS1["RS1 100-330R"]
+        RD0["RD0 100-330R"]
+        RD1["RD1 100-330R"]
+        RD2["RD2 100-330R"]
+        RD3["RD3 100-330R"]
     end
 
-    P1 --> F1 --> D1 --> VBUS
-    VBUS --- TVS1
-    TVS1 --- GND_RP
-    VBUS --- C1
-    C1 --- GND_RP
-    P9 --- GND_RP
-    
-    P5 -.-> RS0 -.->|Input to RP2350| GP0
-    P4 -.-> RS1 -.->|Input to RP2350| GP1
-    
-    GP2 === RD0 ===|Output to Saturn| P3
-    GP3 === RD1 ===|Output to Saturn| P2
-    GP4 === RD2 ===|Output to Saturn| P8
-    GP5 === RD3 ===|Output to Saturn| P7
-    
-    P6 --- P1
+    subgraph U1["Waveshare RP2350-USB-A"]
+        U1_5V["U1 VBUS 5V"]
+        U1_GND["U1 GND"]
+        GP0["U1 GP0 RP_S0"]
+        GP1["U1 GP1 RP_S1"]
+        GP2["U1 GP2 RP_D0"]
+        GP3["U1 GP3 RP_D1"]
+        GP4["U1 GP4 RP_D2"]
+        GP5["U1 GP5 RP_D3"]
+    end
+
+    GND(("GND"))
+
+    J1_1 -->|"series power path"| F1 --> D_PWR --> VBUS_PROT --> U1_5V
+    VBUS_PROT --> C_BULK --> GND
+    VBUS_PROT --> C_HF --> GND
+    VBUS_PROT --> TVS1 --> GND
+    J1_9 --> GND
+    U1_GND --> GND
+
+    J1_5 -->|"input from Saturn"| RS0 --> GP0
+    J1_4 -->|"input from Saturn"| RS1 --> GP1
+
+    GP2 -->|"output to Saturn"| RD0 --> J1_3
+    GP3 -->|"output to Saturn"| RD1 --> J1_2
+    GP4 -->|"output to Saturn"| RD2 --> J1_8
+    GP5 -->|"output to Saturn"| RD3 --> J1_7
+
+    J1_6 -. "optional tie" .-> J1_1
 ```
 
 > [!NOTE]
-> The diagram above is a protection-focused wiring schematic. For the minimum wiring that still works, you can omit TVS/polyfuse/series resistors, but that increases risk to the Saturn in fault or ESD conditions.
+> The diagram above is a protection-focused wiring schematic. For the minimum wiring that still works, you can omit TVS/fuse/series resistors, but that increases risk to the Saturn in fault or ESD conditions.
+
+## Power Budget
+
+The Saturn controller port 5V rail can power the adapter and a low-power USB HID device, but available current margin is not guaranteed across all consoles and accessories. Treat the power path as budget-limited and validate with real measurements for your exact build.
+
+### Current Budget Targets
+
+Use this practical planning equation:
+
+`I_total = I_RP2350 + I_USB_device + I_inrush_margin`
+
+Recommended prototype targets:
+
+- High-confidence target: `I_total <= 200mA`
+- Typical acceptable ceiling: `I_total <= 250mA`
+- Above `250mA`: use a powered USB hub or external regulated 5V source for the USB device side
+
+### Typical Device Classes (Rule-of-Thumb)
+
+| Device Type | Typical Current | Saturn-Powered Recommendation |
+| :-- | :-- | :-- |
+| Basic wired mouse (no lighting) | 20mA to 80mA | Usually OK |
+| Basic wired keyboard (no backlight) | 30mA to 150mA | Usually OK |
+| Gaming mouse with RGB | 80mA to 200mA | Check with USB meter first |
+| Backlit / RGB keyboard | 150mA to 500mA+ | Not recommended without powered hub |
+| Keyboard + mouse via passive splitter/hub | Sum of both + hub loss | Use powered hub |
+
+### Fuse Selection Notes
+
+- `250mA` inline fuse: stronger protection, but may nuisance-trip during startup surges on some keyboards.
+- `500mA` inline fuse: better startup tolerance, but allows higher sustained fault current before opening.
+- Start with `250mA` for conservative bench validation, then move to `500mA` only if repeated nuisance trips occur with known-good low-power devices.
+
+### Bring-Up Checklist
+
+1. Measure USB device current with a USB power meter before first Saturn power-up.
+2. Confirm `I_total` stays within target during idle and keypress/mouse activity.
+3. Check inrush behavior at plug-in (watch for brief spikes causing fuse trips).
+4. If over budget or unstable, move USB device power to a powered hub.

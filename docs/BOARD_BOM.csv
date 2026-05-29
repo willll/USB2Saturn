@@ -1,7 +1,7 @@
 Qty,Reference,Part,Value/Spec,Footprint,Populate
 1,U1,Waveshare RP2350-USB-A module,RP2350-USB-A,Custom castellated,Yes
 1,J1,Saturn cable connector,1x9 wiring interface,TH pads/header,Yes
-1,F1,Resettable fuse,PTC hold 0.25A to 0.50A,1206,Yes
+1,F1,Inline glass fuse,250mA to 500mA sacrificial AGC/glass fuse with inline holder,Inline AGC holder,Yes
 1,D1,Schottky diode,1N5819 class,SMA,Yes
 1,TVS1,TVS diode unidirectional,5V SMBJ5.0A class,SMB,Yes
 1,C1,Bulk capacitor,10uF >=10V,1206,Yes

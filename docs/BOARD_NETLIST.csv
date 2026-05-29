@@ -1,6 +1,6 @@
 Net,From,To,Notes
 SAT_VCC_IN,J1-1,F1-1,Saturn 5V input
-VCC_FUSED,F1-2,D1-A,After polyfuse
+VCC_FUSED,F1-2,D1-A,After inline fuse
 VBUS_PROT,D1-K,U1-5V,Protected board 5V
 VBUS_PROT,TVS1-K,TVS clamp cathode
 GND,TVS1-A,U1-GND,TVS anode to ground
