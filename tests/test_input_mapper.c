@@ -154,7 +154,29 @@ static void test_keyboard_invalid_report(void) {
     expect_all_clear(&state);
 }
 
-static void test_generic_gamepad_mapping(void) {
+static void test_digital_gamepad_mapping(void) {
+    volatile saturn_gamepad_state_t state = {0};
+    uint8_t report[] = {
+        0x41, // A + C
+        0x02, // Start
+        0x01  // hat = up-right
+    };
+
+    bool ok = saturn_map_digital_gamepad_report(report, (uint16_t) sizeof(report), &state);
+    assert(ok);
+
+    assert(state.up);
+    assert(!state.down);
+    assert(!state.left);
+    assert(state.right);
+
+    assert(state.a);
+    assert(!state.b);
+    assert(state.c);
+    assert(state.start);
+}
+
+static void test_analog_gamepad_mapping(void) {
     volatile saturn_gamepad_state_t state = {0};
     uint8_t report[] = {
         0x00, 0x00, 0x00,
@@ -164,7 +186,7 @@ static void test_generic_gamepad_mapping(void) {
         0x02    // buttons high byte (Start)
     };
 
-    bool ok = saturn_map_generic_gamepad_report(report, (uint16_t) sizeof(report), &state);
+    bool ok = saturn_map_analog_gamepad_report(report, (uint16_t) sizeof(report), &state);
     assert(ok);
 
     assert(state.left);
@@ -177,9 +199,37 @@ static void test_generic_gamepad_mapping(void) {
     assert(state.start);
 }
 
+static void test_generic_gamepad_mapping_selects_by_report_size(void) {
+    volatile saturn_gamepad_state_t state = {0};
+    uint8_t digital_report[] = {
+        0x00,
+        0x00,
+        0x06 // hat = left
+    };
+    uint8_t analog_report[] = {
+        0x00, 0x00, 0x00,
+        255,
+        0,
+        0x00,
+        0x00
+    };
+
+    bool ok = saturn_map_generic_gamepad_report(digital_report, (uint16_t) sizeof(digital_report), &state);
+    assert(ok);
+    assert(state.left);
+    assert(!state.right);
+
+    ok = saturn_map_generic_gamepad_report(analog_report, (uint16_t) sizeof(analog_report), &state);
+    assert(ok);
+    assert(!state.left);
+    assert(state.right);
+    assert(state.up);
+    assert(!state.down);
+}
+
 static void test_generic_gamepad_short_report_rejected(void) {
     volatile saturn_gamepad_state_t state = {0};
-    uint8_t report[] = {0, 0, 0, 127, 127, 0xFF}; // len 6 (invalid)
+    uint8_t report[] = {0, 0}; // len 2 (invalid)
 
     bool ok = saturn_map_generic_gamepad_report(report, (uint16_t) sizeof(report), &state);
     assert(!ok);
@@ -223,7 +273,9 @@ int main(void) {
     test_mouse_mapping_buttons_and_motion();
     test_mouse_mapping_deadzone();
     test_mouse_invalid_report();
-    test_generic_gamepad_mapping();
+    test_digital_gamepad_mapping();
+    test_analog_gamepad_mapping();
+    test_generic_gamepad_mapping_selects_by_report_size();
     test_generic_gamepad_short_report_rejected();
     test_usb_to_saturn_scancode_translation_common_keys();
     test_usb_to_saturn_scancode_translation_unsupported_key();

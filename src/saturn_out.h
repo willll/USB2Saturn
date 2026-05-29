@@ -29,6 +29,7 @@ typedef struct {
 typedef enum {
     SATURN_PERIPHERAL_GAMEPAD = 0,
     SATURN_PERIPHERAL_KEYBOARD = 1,
+    SATURN_PERIPHERAL_MOUSE = 2,
 } saturn_peripheral_mode_t;
 
 // Global state accessed by the output protocol
@@ -52,6 +53,13 @@ void saturn_keyboard_set_locks(bool caps_lock, bool num_lock, bool scroll_lock);
 
 // Reset keyboard emulation state and clear queued keycodes.
 void saturn_keyboard_reset_state(void);
+
+// Update the Saturn mouse packet state from a USB boot mouse report.
+// dx/dy are relative deltas; buttons use USB boot bit order (L/R/M in bits 0..2).
+void saturn_mouse_submit_report(uint8_t buttons, int8_t dx, int8_t dy);
+
+// Reset mouse emulation state and clear accumulated motion.
+void saturn_mouse_reset_state(void);
 
 // Initialize the GPIO pins for the Saturn protocol
 void saturn_out_init(void);

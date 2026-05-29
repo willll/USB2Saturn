@@ -1,5 +1,6 @@
 #include "saturn_out.h"
 #include "saturn_keyboard_protocol.h"
+#include "saturn_mouse_protocol.h"
 #include "hardware/gpio.h"
 #include "hardware/irq.h"
 
@@ -16,6 +17,7 @@ volatile saturn_gamepad_state_t g_saturn_state = {0};
 
 static volatile saturn_peripheral_mode_t g_peripheral_mode = SATURN_PERIPHERAL_GAMEPAD;
 static saturn_keyboard_protocol_t g_keyboard_protocol;
+static saturn_mouse_protocol_t g_mouse_protocol;
 
 static uint16_t saturn_build_game_key_word(void) {
     uint16_t game_key = 0xFFFFu;
@@ -50,6 +52,12 @@ static inline void update_data_lines(uint8_t s0, uint8_t s1) {
                                                         s1);
 
         // Shift data_val to the correct GPIO base (PIN_D0)
+        gpio_put_masked(0xFu << PIN_D0, ((uint32_t)data_val) << PIN_D0);
+        return;
+    }
+
+    if (g_peripheral_mode == SATURN_PERIPHERAL_MOUSE) {
+        data_val = saturn_mouse_protocol_next_nibble(&g_mouse_protocol, s0, s1);
         gpio_put_masked(0xFu << PIN_D0, ((uint32_t)data_val) << PIN_D0);
         return;
     }
@@ -128,7 +136,9 @@ void saturn_out_init(void) {
     gpio_set_irq_enabled(PIN_S1, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
     
     saturn_keyboard_protocol_reset(&g_keyboard_protocol);
+    saturn_mouse_protocol_reset(&g_mouse_protocol);
     saturn_keyboard_reset_state();
+    saturn_mouse_reset_state();
 
     // Call once to set initial state
     update_data_lines(gpio_get(PIN_S0), gpio_get(PIN_S1));
@@ -137,6 +147,7 @@ void saturn_out_init(void) {
 void saturn_set_peripheral_mode(saturn_peripheral_mode_t mode) {
     g_peripheral_mode = mode;
     saturn_keyboard_protocol_reset_poll_state(&g_keyboard_protocol);
+    saturn_mouse_protocol_reset_poll_state(&g_mouse_protocol);
 }
 
 saturn_peripheral_mode_t saturn_get_peripheral_mode(void) {
@@ -161,4 +172,17 @@ void saturn_keyboard_set_locks(bool caps_lock, bool num_lock, bool scroll_lock) 
 
 void saturn_keyboard_reset_state(void) {
     saturn_keyboard_protocol_reset(&g_keyboard_protocol);
+}
+
+void saturn_mouse_submit_report(uint8_t buttons, int8_t dx, int8_t dy) {
+    saturn_mouse_protocol_set_buttons(&g_mouse_protocol,
+                                      (buttons & 0x01u) != 0u,
+                                      (buttons & 0x02u) != 0u,
+                                      (buttons & 0x04u) != 0u,
+                                      false);
+    saturn_mouse_protocol_add_motion(&g_mouse_protocol, dx, dy);
+}
+
+void saturn_mouse_reset_state(void) {
+    saturn_mouse_protocol_reset(&g_mouse_protocol);
 }

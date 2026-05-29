@@ -113,6 +113,7 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
     saturn_gamepad_state_clear(&g_saturn_state);
     saturn_set_peripheral_mode(SATURN_PERIPHERAL_GAMEPAD);
     saturn_keyboard_reset_state();
+    saturn_mouse_reset_state();
     for (uint8_t i = 0; i < 8; ++i) {
         g_prev_kbd_report[i] = 0u;
     }
@@ -162,12 +163,13 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
             }
         }
     } else if (itf_protocol == HID_ITF_PROTOCOL_MOUSE) {
-        saturn_set_peripheral_mode(SATURN_PERIPHERAL_GAMEPAD);
-        // Boot mouse report mapping to Saturn digital controls.
-        // This provides usable mouse-driven movement/buttons while preserving
-        // the existing Saturn digital output protocol implementation.
-        if (!saturn_map_mouse_boot_report(report, len, &g_saturn_state)) {
-            saturn_gamepad_state_clear(&g_saturn_state);
+        saturn_set_peripheral_mode(SATURN_PERIPHERAL_MOUSE);
+        saturn_gamepad_state_clear(&g_saturn_state);
+
+        if (!report || len < 3) {
+            saturn_mouse_reset_state();
+        } else {
+            saturn_mouse_submit_report(report[0], (int8_t)report[1], (int8_t)report[2]);
         }
     } else {
         saturn_set_peripheral_mode(SATURN_PERIPHERAL_GAMEPAD);

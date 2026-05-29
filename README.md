@@ -50,19 +50,24 @@ make
 4. The board will automatically reboot and start running the software.
 
 ## Current Status
-- Supports generic HID Gamepads mapped to the standard Sega Saturn controller layout.
+- Supports digital (hat/button) and analog-stick USB HID Gamepads mapped to the standard Sega Saturn controller layout.
 - The Sega Saturn bit-bang protocol is implemented using GPIO interrupts.
-- USB boot mouse reports are mapped to Saturn digital controls (movement to D-pad, buttons to A/B/C).
+- USB boot mouse reports are emitted as Sega Saturn mouse packets (`E3h`) with relative X/Y motion and button bits.
 - USB boot keyboard reports keep Saturn control mapping (arrows/WASD + action key map).
 - Added a Saturn keyboard peripheral mode with queued scancode output and lock-status bits.
 - Added USB HID keycode to Saturn scancode translation for alphanumeric, function, arrows, and common punctuation keys.
 - Host unit tests cover input mapping behavior in `tests/test_input_mapper.c`.
+- Host protocol tests cover exact Saturn keyboard and mouse packet formatting.
 
 Keyboard notes:
 - Keyboard peripheral mode is selected automatically when a USB keyboard is active.
 - Keyboard packet prefix is `%0011 %0100` (`0x34`) and packets are emitted as 12 nibbles per poll sequence.
 - Make/Break bits and scancode nibbles follow the Saturn keyboard format documented by PlutieDev.
 - This implementation is designed for Game BASIC style keyboard polling and may require per-title tuning as more Saturn keyboard traces are collected.
+
+SMPC scope notes:
+- Keyboard and mouse peripheral packets are implemented for SMPC control-mode polling (`INTBACK` path).
+- SH-2 direct-mode peripheral handshake sequences are not currently emulated.
 
 ### USB Keyboard Mapping
 

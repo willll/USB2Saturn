@@ -94,6 +94,33 @@ static bool key_present(uint8_t const* report, uint8_t keycode) {
     return false;
 }
 
+static void saturn_apply_button_bits(volatile saturn_gamepad_state_t* state, uint16_t buttons) {
+    state->a = ((buttons & 0x0001u) != 0u);
+    state->b = ((buttons & 0x0002u) != 0u);
+    state->x = ((buttons & 0x0004u) != 0u);
+    state->y = ((buttons & 0x0008u) != 0u);
+    state->l = ((buttons & 0x0010u) != 0u);
+    state->r = ((buttons & 0x0020u) != 0u);
+    state->c = ((buttons & 0x0040u) != 0u);
+    state->z = ((buttons & 0x0080u) != 0u);
+    state->start = ((buttons & 0x0200u) != 0u);
+}
+
+static void saturn_apply_hat_dpad(volatile saturn_gamepad_state_t* state, uint8_t hat) {
+    // Standard HID hat: 0..7 directions, 8 (or 0x0F) = neutral.
+    switch (hat & 0x0Fu) {
+    case 0x00u: state->up = true; break;
+    case 0x01u: state->up = true; state->right = true; break;
+    case 0x02u: state->right = true; break;
+    case 0x03u: state->down = true; state->right = true; break;
+    case 0x04u: state->down = true; break;
+    case 0x05u: state->down = true; state->left = true; break;
+    case 0x06u: state->left = true; break;
+    case 0x07u: state->up = true; state->left = true; break;
+    default: break;
+    }
+}
+
 void saturn_gamepad_state_clear(volatile saturn_gamepad_state_t* state) {
     if (!state) {
         return;
@@ -185,27 +212,57 @@ bool saturn_map_mouse_boot_report(uint8_t const* report, uint16_t len,
 
 bool saturn_map_generic_gamepad_report(uint8_t const* report, uint16_t len,
                                        volatile saturn_gamepad_state_t* state) {
+    if (!report || !state) {
+        return false;
+    }
+
+    // Prefer the analog layout for longer descriptor-unaware reports.
+    // Keep the compact 3-byte layout for simple digital/hat-only devices.
+    if (len >= 7) {
+        return saturn_map_analog_gamepad_report(report, len, state);
+    }
+
+    return saturn_map_digital_gamepad_report(report, len, state);
+}
+
+bool saturn_map_digital_gamepad_report(uint8_t const* report, uint16_t len,
+                                       volatile saturn_gamepad_state_t* state) {
+    if (!report || !state || len < 3) {
+        return false;
+    }
+
+    saturn_gamepad_state_clear(state);
+
+    {
+        uint16_t buttons = (uint16_t) report[0] | ((uint16_t) report[1] << 8);
+        saturn_apply_button_bits(state, buttons);
+    }
+
+    saturn_apply_hat_dpad(state, report[2]);
+    return true;
+}
+
+bool saturn_map_analog_gamepad_report(uint8_t const* report, uint16_t len,
+                                      volatile saturn_gamepad_state_t* state) {
+    // Descriptor-unaware fallback used by many generic USB pads.
+    // byte3/4 are often LX/LY centered at 128.
+    const uint8_t analog_low = 96u;
+    const uint8_t analog_high = 160u;
+
     if (!report || !state || len < 7) {
         return false;
     }
 
-    // Very generic fallback mapping (descriptor-unaware).
-    state->left = (report[3] < 128u);
-    state->right = (report[3] > 128u);
-    state->up = (report[4] < 128u);
-    state->down = (report[4] > 128u);
+    saturn_gamepad_state_clear(state);
+
+    state->left = (report[3] < analog_low);
+    state->right = (report[3] > analog_high);
+    state->up = (report[4] < analog_low);
+    state->down = (report[4] > analog_high);
 
     {
         uint16_t buttons = (uint16_t) report[5] | ((uint16_t) report[6] << 8);
-        state->a = ((buttons & 0x0001u) != 0u);
-        state->b = ((buttons & 0x0002u) != 0u);
-        state->x = ((buttons & 0x0004u) != 0u);
-        state->y = ((buttons & 0x0008u) != 0u);
-        state->l = ((buttons & 0x0010u) != 0u);
-        state->r = ((buttons & 0x0020u) != 0u);
-        state->c = ((buttons & 0x0040u) != 0u);
-        state->z = ((buttons & 0x0080u) != 0u);
-        state->start = ((buttons & 0x0200u) != 0u);
+        saturn_apply_button_bits(state, buttons);
     }
 
     return true;

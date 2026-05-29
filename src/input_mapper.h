@@ -28,6 +28,20 @@ bool saturn_map_mouse_boot_report(uint8_t const* report, uint16_t len,
 bool saturn_map_generic_gamepad_report(uint8_t const* report, uint16_t len,
                                        volatile saturn_gamepad_state_t* state);
 
+// Map a digital gamepad report.
+// Expected report format:
+//   byte0: buttons low, byte1: buttons high, byte2: hat (0..7, 8/0x0F = centered)
+// Returns false when the report is too short to parse.
+bool saturn_map_digital_gamepad_report(uint8_t const* report, uint16_t len,
+                                       volatile saturn_gamepad_state_t* state);
+
+// Map an analog gamepad report.
+// Expected report format:
+//   byte3: LX axis (0..255), byte4: LY axis (0..255), byte5..6: button bitfield
+// Returns false when the report is too short to parse.
+bool saturn_map_analog_gamepad_report(uint8_t const* report, uint16_t len,
+                                      volatile saturn_gamepad_state_t* state);
+
 // Translate USB HID boot keyboard keycode to Saturn keyboard scancode.
 // Returns false when the key is unsupported.
 bool saturn_map_usb_keycode_to_saturn_scancode(uint8_t usb_keycode, uint8_t* saturn_scancode);
