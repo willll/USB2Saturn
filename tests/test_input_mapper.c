@@ -186,6 +186,35 @@ static void test_generic_gamepad_short_report_rejected(void) {
     expect_all_clear(&state);
 }
 
+static void test_usb_to_saturn_scancode_translation_common_keys(void) {
+    uint8_t sc = 0;
+
+    assert(saturn_map_usb_keycode_to_saturn_scancode(0x04, &sc)); // A
+    assert(sc == 0x1C);
+
+    assert(saturn_map_usb_keycode_to_saturn_scancode(0x1E, &sc)); // 1
+    assert(sc == 0x16);
+
+    assert(saturn_map_usb_keycode_to_saturn_scancode(0x28, &sc)); // Enter
+    assert(sc == 0x5A);
+
+    assert(saturn_map_usb_keycode_to_saturn_scancode(0x52, &sc)); // Up
+    assert(sc == 0x89);
+
+    assert(saturn_map_usb_keycode_to_saturn_scancode(0x3A, &sc)); // F1
+    assert(sc == 0x01);
+
+    assert(saturn_map_usb_keycode_to_saturn_scancode(0x29, &sc)); // Esc
+    assert(sc == 0x76);
+}
+
+static void test_usb_to_saturn_scancode_translation_unsupported_key(void) {
+    uint8_t sc = 0xAA;
+    bool ok = saturn_map_usb_keycode_to_saturn_scancode(0x65, &sc); // Application/Menu
+    assert(!ok);
+    assert(sc == 0xAA);
+}
+
 int main(void) {
     test_clear_state();
     test_keyboard_mapping_arrows_and_buttons();
@@ -196,6 +225,8 @@ int main(void) {
     test_mouse_invalid_report();
     test_generic_gamepad_mapping();
     test_generic_gamepad_short_report_rejected();
+    test_usb_to_saturn_scancode_translation_common_keys();
+    test_usb_to_saturn_scancode_translation_unsupported_key();
 
     puts("All input mapper tests passed.");
     return 0;

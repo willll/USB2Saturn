@@ -20,6 +20,7 @@ add_executable(USB2Saturn
     src/usb_host.c
     src/saturn_out.c
     src/input_mapper.c
+    src/saturn_keyboard_protocol.c
 )
 set_target_properties(USB2Saturn PROPERTIES SUFFIX ".elf")
 
@@ -60,4 +61,15 @@ if(USB2SATURN_ENABLE_HOST_TESTS AND NOT CMAKE_CROSSCOMPILING)
     )
 
     add_test(NAME usb2saturn_input_mapper_tests COMMAND usb2saturn_input_mapper_tests)
+
+    add_executable(usb2saturn_keyboard_protocol_tests
+        tests/test_keyboard_protocol.c
+        src/saturn_keyboard_protocol.c
+    )
+
+    target_include_directories(usb2saturn_keyboard_protocol_tests PRIVATE
+        src
+    )
+
+    add_test(NAME usb2saturn_keyboard_protocol_tests COMMAND usb2saturn_keyboard_protocol_tests)
 endif()

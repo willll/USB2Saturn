@@ -28,6 +28,10 @@ bool saturn_map_mouse_boot_report(uint8_t const* report, uint16_t len,
 bool saturn_map_generic_gamepad_report(uint8_t const* report, uint16_t len,
                                        volatile saturn_gamepad_state_t* state);
 
+// Translate USB HID boot keyboard keycode to Saturn keyboard scancode.
+// Returns false when the key is unsupported.
+bool saturn_map_usb_keycode_to_saturn_scancode(uint8_t usb_keycode, uint8_t* saturn_scancode);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,4 +1,5 @@
 #include "saturn_out.h"
+#include "saturn_keyboard_protocol.h"
 #include "hardware/gpio.h"
 #include "hardware/irq.h"
 
@@ -13,11 +14,45 @@
 
 volatile saturn_gamepad_state_t g_saturn_state = {0};
 
+static volatile saturn_peripheral_mode_t g_peripheral_mode = SATURN_PERIPHERAL_GAMEPAD;
+static saturn_keyboard_protocol_t g_keyboard_protocol;
+
+static uint16_t saturn_build_game_key_word(void) {
+    uint16_t game_key = 0xFFFFu;
+
+    if (g_saturn_state.right) { game_key &= (uint16_t)~(1u << 15); }
+    if (g_saturn_state.left)  { game_key &= (uint16_t)~(1u << 14); }
+    if (g_saturn_state.down)  { game_key &= (uint16_t)~(1u << 13); }
+    if (g_saturn_state.up)    { game_key &= (uint16_t)~(1u << 12); }
+    if (g_saturn_state.start) { game_key &= (uint16_t)~(1u << 11); }
+    if (g_saturn_state.a)     { game_key &= (uint16_t)~(1u << 10); }
+    if (g_saturn_state.c)     { game_key &= (uint16_t)~(1u << 9); }
+    if (g_saturn_state.b)     { game_key &= (uint16_t)~(1u << 8); }
+    if (g_saturn_state.r)     { game_key &= (uint16_t)~(1u << 7); }
+    if (g_saturn_state.x)     { game_key &= (uint16_t)~(1u << 6); }
+    if (g_saturn_state.y)     { game_key &= (uint16_t)~(1u << 5); }
+    if (g_saturn_state.z)     { game_key &= (uint16_t)~(1u << 4); }
+    if (g_saturn_state.l)     { game_key &= (uint16_t)~(1u << 3); }
+
+    return game_key;
+}
+
 // Pre-calculate the output bitmasks for speed
 // The data pins are contiguous from GPIO 2 to GPIO 5, so a mask shift is easy.
 // A pressed button is LOW (0), unpressed is HIGH (1).
 static inline void update_data_lines(uint8_t s0, uint8_t s1) {
     uint32_t data_val = 0;
+
+    if (g_peripheral_mode == SATURN_PERIPHERAL_KEYBOARD) {
+        data_val = saturn_keyboard_protocol_next_nibble(&g_keyboard_protocol,
+                                                        saturn_build_game_key_word(),
+                                                        s0,
+                                                        s1);
+
+        // Shift data_val to the correct GPIO base (PIN_D0)
+        gpio_put_masked(0xFu << PIN_D0, ((uint32_t)data_val) << PIN_D0);
+        return;
+    }
 
     if (s1 == 1 && s0 == 0) {
         // D3=Right, D2=Left, D1=Down, D0=Up
@@ -92,6 +127,38 @@ void saturn_out_init(void) {
     gpio_set_irq_enabled_with_callback(PIN_S0, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &saturn_gpio_callback);
     gpio_set_irq_enabled(PIN_S1, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
     
+    saturn_keyboard_protocol_reset(&g_keyboard_protocol);
+    saturn_keyboard_reset_state();
+
     // Call once to set initial state
     update_data_lines(gpio_get(PIN_S0), gpio_get(PIN_S1));
+}
+
+void saturn_set_peripheral_mode(saturn_peripheral_mode_t mode) {
+    g_peripheral_mode = mode;
+    saturn_keyboard_protocol_reset_poll_state(&g_keyboard_protocol);
+}
+
+saturn_peripheral_mode_t saturn_get_peripheral_mode(void) {
+    return g_peripheral_mode;
+}
+
+bool saturn_keyboard_push_scancode(uint8_t scancode) {
+    return saturn_keyboard_protocol_push_make(&g_keyboard_protocol, scancode);
+}
+
+bool saturn_keyboard_push_break_scancode(uint8_t scancode) {
+    return saturn_keyboard_protocol_push_break(&g_keyboard_protocol, scancode);
+}
+
+void saturn_keyboard_release_key(void) {
+    saturn_keyboard_protocol_release_last(&g_keyboard_protocol);
+}
+
+void saturn_keyboard_set_locks(bool caps_lock, bool num_lock, bool scroll_lock) {
+    saturn_keyboard_protocol_set_locks(&g_keyboard_protocol, caps_lock, num_lock, scroll_lock);
+}
+
+void saturn_keyboard_reset_state(void) {
+    saturn_keyboard_protocol_reset(&g_keyboard_protocol);
 }
