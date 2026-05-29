@@ -50,22 +50,40 @@ cmake --build build_native -j
 
 ## 3. Host Unit Tests
 
-The project includes host-runnable unit tests for input mapping in `tests/test_input_mapper.c`.
+The project includes host-runnable unit tests for:
+
+- Input mapping (`tests/test_input_mapper.c`)
+- Keyboard protocol packet formatting (`tests/test_keyboard_protocol.c`)
+- Mouse protocol packet formatting (`tests/test_mouse_protocol.c`)
 
 Quick run with gcc:
 
 ```bash
 gcc -std=c11 -Wall -Wextra -Isrc tests/test_input_mapper.c src/input_mapper.c -o /tmp/usb2saturn_input_mapper_tests
 /tmp/usb2saturn_input_mapper_tests
+
+gcc -std=c11 -Wall -Wextra -Isrc tests/test_keyboard_protocol.c src/saturn_keyboard_protocol.c -o /tmp/usb2saturn_keyboard_protocol_tests
+/tmp/usb2saturn_keyboard_protocol_tests
+
+gcc -std=c11 -Wall -Wextra -Isrc tests/test_mouse_protocol.c src/saturn_mouse_protocol.c -o /tmp/usb2saturn_mouse_protocol_tests
+/tmp/usb2saturn_mouse_protocol_tests
 ```
 
 Expected output:
 
 - `All input mapper tests passed.`
+- `All keyboard protocol tests passed.`
+- `All mouse protocol tests passed.`
 
 ## 4. CTest Integration (Host Builds)
 
 For non-cross host configurations, CMake defines `usb2saturn_input_mapper_tests` and registers it with CTest.
+
+CTest targets include all three host tests:
+
+- `usb2saturn_input_mapper_tests`
+- `usb2saturn_keyboard_protocol_tests`
+- `usb2saturn_mouse_protocol_tests`
 
 Example:
 
@@ -78,6 +96,7 @@ ctest --test-dir build_host --output-on-failure
 Note:
 
 - The CTest target is disabled automatically for cross-compiling firmware toolchains.
+- If host configure still selects Pico cross toolchain in your environment, use the gcc quick-run commands in Section 3 as the fallback validation path.
 
 ## 5. Firmware Validation Checklist
 
