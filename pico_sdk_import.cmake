@@ -32,7 +32,7 @@ if (NOT PICO_SDK_PATH)
         FetchContent_Declare(
                 pico_sdk
                 GIT_REPOSITORY https://github.com/raspberrypi/pico-sdk
-                GIT_TAG master
+            GIT_TAG a1438dff1d38bd9c65dbd693f0e5db4b9ae91779
         )
         if (NOT pico_sdk)
             message("Downloading Raspberry Pi Pico SDK")
