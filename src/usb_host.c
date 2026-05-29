@@ -1,5 +1,6 @@
 #include "usb_host.h"
 #include "saturn_out.h"
+#include "input_mapper.h"
 
 #include "bsp/board_api.h"
 #include "tusb.h"
@@ -34,6 +35,7 @@ void tuh_hid_umount_cb(uint8_t dev_addr, uint8_t instance) {
     // Reset state if needed
     (void) dev_addr;
     (void) instance;
+    saturn_gamepad_state_clear(&g_saturn_state);
 }
 
 // Invoked when received report from device via interrupt endpoint
@@ -42,11 +44,17 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
     uint8_t const itf_protocol = tuh_hid_interface_protocol(dev_addr, instance);
 
     if (itf_protocol == HID_ITF_PROTOCOL_KEYBOARD) {
-        // Simple keyboard mapping to Saturn Controller
-        // For example: Arrows = D-Pad, Z=A, X=B, C=C, A=X, S=Y, D=Z, Enter=Start
-        // This is a placeholder. A full implementation would parse report->keycode
+        // Boot keyboard report mapping to Saturn digital controls.
+        if (!saturn_map_keyboard_boot_report(report, len, &g_saturn_state)) {
+            saturn_gamepad_state_clear(&g_saturn_state);
+        }
     } else if (itf_protocol == HID_ITF_PROTOCOL_MOUSE) {
-        // Mouse mapping to Saturn Mouse
+        // Boot mouse report mapping to Saturn digital controls.
+        // This provides usable mouse-driven movement/buttons while preserving
+        // the existing Saturn digital output protocol implementation.
+        if (!saturn_map_mouse_boot_report(report, len, &g_saturn_state)) {
+            saturn_gamepad_state_clear(&g_saturn_state);
+        }
     } else {
         // Generic HID / Gamepad
         // For a robust implementation, we should parse the HID report descriptor.
@@ -55,24 +63,8 @@ void tuh_hid_report_received_cb(uint8_t dev_addr, uint8_t instance, uint8_t cons
 
         // TODO: Add proper HID report parsing using tuh_hid_parse_report_descriptor
         // Here is a very crude hardcoded map for generic PS3/PC gamepads as a fallback.
-        if (len >= 6) {
-            // Very generic mapping (will vary wildly between controllers without proper report parsing)
-            g_saturn_state.left = (report[3] < 128);
-            g_saturn_state.right = (report[3] > 128);
-            g_saturn_state.up = (report[4] < 128);
-            g_saturn_state.down = (report[4] > 128);
-            
-            // Buttons usually on byte 5 and 6
-            uint16_t buttons = report[5] | (report[6] << 8);
-            g_saturn_state.a = (buttons & 0x0001); // often Cross/A
-            g_saturn_state.b = (buttons & 0x0002); // often Circle/B
-            g_saturn_state.x = (buttons & 0x0004); // often Square/X
-            g_saturn_state.y = (buttons & 0x0008); // often Triangle/Y
-            g_saturn_state.l = (buttons & 0x0010); // L1
-            g_saturn_state.r = (buttons & 0x0020); // R1
-            g_saturn_state.c = (buttons & 0x0040); // L2
-            g_saturn_state.z = (buttons & 0x0080); // R2
-            g_saturn_state.start = (buttons & 0x0200); // Start
+        if (!saturn_map_generic_gamepad_report(report, len, &g_saturn_state)) {
+            saturn_gamepad_state_clear(&g_saturn_state);
         }
     }
 

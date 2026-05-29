@@ -19,6 +19,7 @@ add_executable(USB2Saturn
     src/main.c
     src/usb_host.c
     src/saturn_out.c
+    src/input_mapper.c
 )
 set_target_properties(USB2Saturn PROPERTIES SUFFIX ".elf")
 
@@ -43,3 +44,20 @@ target_link_libraries(USB2Saturn hardware_pio)
 
 # Create map/bin/hex/uf2 files
 pico_add_extra_outputs(USB2Saturn)
+
+option(USB2SATURN_ENABLE_HOST_TESTS "Build host unit tests (non-cross builds only)" ON)
+
+if(USB2SATURN_ENABLE_HOST_TESTS AND NOT CMAKE_CROSSCOMPILING)
+    include(CTest)
+
+    add_executable(usb2saturn_input_mapper_tests
+        tests/test_input_mapper.c
+        src/input_mapper.c
+    )
+
+    target_include_directories(usb2saturn_input_mapper_tests PRIVATE
+        src
+    )
+
+    add_test(NAME usb2saturn_input_mapper_tests COMMAND usb2saturn_input_mapper_tests)
+endif()

@@ -18,6 +18,9 @@ KiCad skeleton project:
 - [hardware/USB2Saturn_Protection/USB2Saturn_Protection.kicad_pro](hardware/USB2Saturn_Protection/USB2Saturn_Protection.kicad_pro)
 - [hardware/USB2Saturn_Protection/README.md](hardware/USB2Saturn_Protection/README.md)
 
+Compilation and validation:
+- [docs/BUILD_VALIDATION.md](docs/BUILD_VALIDATION.md)
+
 Pinout data sources:
 - Sega Saturn controller pinout: https://gamesx.com/controldata/saturn.htm
 - Waveshare RP2350-USB-A pin reference: https://www.waveshare.com/wiki/RP2350-USB-A?srsltid=AfmBOord3EtosYRN9eA4ZmPHfdGHGz5l1G7hL_v2CVy890FmMrs2h8b_
@@ -49,7 +52,9 @@ make
 ## Current Status
 - Supports generic HID Gamepads mapped to the standard Sega Saturn controller layout.
 - The Sega Saturn bit-bang protocol is implemented using GPIO interrupts.
-- Currently Keyboard and Mouse HID reports are stubbed but not fully mapped.
+- USB boot mouse reports are mapped to Saturn digital controls (movement to D-pad, buttons to A/B/C).
+- USB boot keyboard reports are mapped to Saturn controls (arrows/WASD + action key map).
+- Host unit tests cover input mapping behavior in `tests/test_input_mapper.c`.
 
 ## License
 MIT License
